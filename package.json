@@ -1,4 +1,5 @@
 {
+  "homepage": "https://sakapati.github.io/JSX/",
   "name": "jsx",
   "private": true,
   "version": "0.0.0",
@@ -7,10 +8,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npm run build && gh-pages -d dist"
   },
   "dependencies": {
     "gh-pages": "^6.3.0",
+    "nanoid": "^5.1.6",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },

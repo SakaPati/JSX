@@ -1,0 +1,10 @@
+.ContactForm{
+    row-gap: 10px;
+}
+
+.ContactForm, .ContactLabel{
+    display: flex;
+    flex-direction: column;
+    justify-content: start;
+    align-items: start;
+}
