@@ -1,82 +1,62 @@
-import "./App.css";
-import { nanoid } from "nanoid";
+import "./Components/styles.css";
 import { Component } from "react";
-import { ContactForm } from "./Components/ContactForm/ContactForm";
-import { ContactList } from "./Components/ContactList/ContactList";
-import { Filter } from "./Components/Filter/Filter";
+import env from "./env";
+import axios from "axios";
+
+import { Searchbar } from "./Components/Searchbar/Searchbar";
+import { ImageGallery } from "./Components/ImageGallery/ImageGallery";
+import { Button } from "./Components/Button/Button";
 
 export class App extends Component {
-  componentDidMount() { 
-    const savedData = localStorage.getItem("contacts");
-    if (savedData) {
-      this.setState({
-        contacts: JSON.parse(savedData)
-      });
-     }
-  }
-
-  componentDidUpdate(prevState) { 
-    if (prevState.contacts !== this.state.contacts) { 
-      localStorage.setItem("contacts", JSON.stringify(this.state.contacts))
-    }
-  }
   state = {
-    contacts: [],
-    filter: "",
-    name: "",
-    number: "",
+    data: [],
+    page: null,
+    query: "",
   };
 
-  addContact = ({ name, number }) => {
-    const contacts = this.state.contacts;
-    const contact = {
-      id: nanoid(),
-      name: name,
-      number: number,
-    };
-    if (!contacts.find((contact) => contact.number === number)) {
-      this.setState((prevState) => ({
-        contacts: [...prevState.contacts, contact],
-      }));
-    } else {
-      alert("Этот контакт уже существуют");
-    }
-  };
+  handleSubmit = async (value) => {
+    const res = await axios.get(
+      `${env.API_URL}?q=${value}&page=1&key=${env.API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
+    );
 
-  removeContact = (id) => {
-    this.setState((prevState) => ({
-      contacts: prevState.contacts.filter((contact) => contact.id !== id),
-    }));
-  };
-
-  contactFilter = (e) => {
     this.setState({
-      filter: e.currentTarget.value,
+      data: res.data.hits.map((image) => ({
+        prevImage: image.webformatURL,
+        image: image.largeImageURL,
+        tag: image.tags,
+      })),
+      page: 1,
+      query: value,
     });
   };
 
-  contactVisible = () => {
-    const { contacts, filter } = this.state;
-    const normalize = filter.toLowerCase();
-
-    return contacts.filter(({ name, number }) =>
-      [name, number].some((field) => field.toLowerCase().includes(normalize))
+  loadMore = async () => {
+    const nextPage = this.state.page + 1;
+    const res = await axios.get(
+      `${env.API_URL}?q=${this.state.query}&page=${nextPage}&key=${env.API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
     );
+    this.setState((prevState) => ({
+      data: [
+        ...prevState.data,
+        ...res.data.hits.map((image) => ({
+          prevImage: image.webformatURL,
+          image: image.largeImageURL,
+          tag: image.tags,
+        })),
+      ],
+      page: nextPage,
+    }));
+
+    console.log(this.state.data)
   };
 
   render() {
-    const { contacts, filter } = this.state;
     return (
-      <div>
-        <h1>Phonebook</h1>
-        <ContactForm onSubmit={this.addContact} />
-        <h2 style={{ textAlign: "start" }}>Contacts</h2>
-        <Filter onChange={this.contactFilter} value={filter} />
-        <ContactList
-          contacts={this.contactVisible()}
-          onDeleteContact={this.removeContact}
-        />
-      </div>
+      <>
+        <Searchbar onSubmit={this.handleSubmit} />
+        <ImageGallery onData={this.state.data} />
+        {this.state.data.length > 0 && <Button onLoadMore={this.loadMore} />}
+      </>
     );
   }
 }
